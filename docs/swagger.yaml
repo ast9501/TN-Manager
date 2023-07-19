@@ -1,0 +1,88 @@
+basePath: /
+definitions:
+  main.BridgeResponse:
+    properties:
+      bridge:
+        type: string
+      interface:
+        type: string
+    type: object
+  main.InterfaceRequest:
+    properties:
+      bridge1:
+        type: string
+      bridge2:
+        type: string
+    type: object
+host: 192.168.0.189:8080
+info:
+  contact: {}
+  description: API endpoints for managing bridges and interfaces.
+  title: Bridge API
+  version: "1.0"
+paths:
+  /api/v1/bridge:
+    get:
+      description: Get the current bridge and its connected interface
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.BridgeResponse'
+      summary: Get current bridge and connected interface
+      tags:
+      - bridge
+  /api/v1/bridge/{bridge_name}:
+    post:
+      consumes:
+      - application/json
+      description: Add a new bridge with the given name
+      parameters:
+      - description: Bridge name
+        in: path
+        name: bridge_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bridge created successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid bridge name
+          schema:
+            type: string
+      summary: Add a new bridge
+      tags:
+      - bridge
+  /api/v1/interface:
+    post:
+      consumes:
+      - application/json
+      description: Add a new interface between two bridges
+      parameters:
+      - description: Interface request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.InterfaceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Interface added successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+      summary: Add a new interface
+      tags:
+      - interface
+swagger: "2.0"

@@ -1,0 +1,135 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API endpoints for managing bridges and interfaces.",
+        "title": "Bridge API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "192.168.0.189:8080",
+    "basePath": "/",
+    "paths": {
+        "/api/v1/bridge": {
+            "get": {
+                "description": "Get the current bridge and its connected interface",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bridge"
+                ],
+                "summary": "Get current bridge and connected interface",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.BridgeResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/bridge/{bridge_name}": {
+            "post": {
+                "description": "Add a new bridge with the given name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bridge"
+                ],
+                "summary": "Add a new bridge",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bridge name",
+                        "name": "bridge_name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bridge created successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid bridge name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/interface": {
+            "post": {
+                "description": "Add a new interface between two bridges",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "interface"
+                ],
+                "summary": "Add a new interface",
+                "parameters": [
+                    {
+                        "description": "Interface request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.InterfaceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Interface added successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.BridgeResponse": {
+            "type": "object",
+            "properties": {
+                "bridge": {
+                    "type": "string"
+                },
+                "interface": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.InterfaceRequest": {
+            "type": "object",
+            "properties": {
+                "bridge1": {
+                    "type": "string"
+                },
+                "bridge2": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
