@@ -14,7 +14,21 @@ definitions:
       bridge2:
         type: string
     type: object
-host: 192.168.0.189:8080
+  main.VxlanInterfaceRequest:
+    properties:
+      bindInterface:
+        type: string
+      localBrIp:
+        type: string
+      remoteIp:
+        description: "LocalBridgeName\t\tstring\t`json:\"localBrName\"`"
+        type: string
+      vxlanId:
+        type: string
+      vxlanInterface:
+        type: string
+    type: object
+host: 192.168.101.128:8080
 info:
   contact: {}
   description: API endpoints for managing bridges and interfaces.
@@ -85,4 +99,55 @@ paths:
       summary: Add a new interface
       tags:
       - interface
+  /api/v1/vxlan/{bridge_name}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a exist bridge with the given name
+      parameters:
+      - description: Bridge name
+        in: path
+        name: bridge_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bridge delete successfully
+          schema:
+            type: string
+      summary: Delete bridge
+      tags:
+      - vxlan
+    post:
+      consumes:
+      - application/json
+      description: Add a new bridge with the given name
+      parameters:
+      - description: Bridge name
+        in: path
+        name: bridge_name
+        required: true
+        type: string
+      - description: Vxlan Interface request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.VxlanInterfaceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Bridge created successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid bridge name
+          schema:
+            type: string
+      summary: Add a new bridge
+      tags:
+      - vxlan
 swagger: "2.0"

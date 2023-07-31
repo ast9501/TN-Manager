@@ -113,6 +113,83 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/vxlan/{bridge_name}": {
+            "post": {
+                "description": "Add a new bridge with the given name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vxlan"
+                ],
+                "summary": "Add a new bridge",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bridge name",
+                        "name": "bridge_name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Vxlan Interface request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.VxlanInterfaceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Bridge created successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid bridge name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a exist bridge with the given name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vxlan"
+                ],
+                "summary": "Delete bridge",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bridge name",
+                        "name": "bridge_name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bridge delete successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -137,6 +214,27 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "main.VxlanInterfaceRequest": {
+            "type": "object",
+            "properties": {
+                "bindInterface": {
+                    "type": "string"
+                },
+                "localBrIp": {
+                    "type": "string"
+                },
+                "remoteIp": {
+                    "description": "LocalBridgeName\t\tstring\t` + "`" + `json:\"localBrName\"` + "`" + `",
+                    "type": "string"
+                },
+                "vxlanId": {
+                    "type": "string"
+                },
+                "vxlanInterface": {
+                    "type": "string"
+                }
+            }
         }
     }
 }`
@@ -144,7 +242,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "192.168.0.189:8080",
+	Host:             "192.168.101.128:8080",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Bridge API",

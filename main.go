@@ -17,10 +17,13 @@ import (
 
 var sysLogger *log.Logger
 
+// Map bridgeName to vxlanInterface
+var BridgeMap map[string]string = make(map[string]string)
+
 // @title Bridge API
 // @version 1.0
 // @description API endpoints for managing bridges and interfaces.
-// @host 192.168.0.189:8080
+// @host 192.168.101.128:8080
 // @BasePath /
 func main() {
 	sysLogger = log.New(os.Stdout, "[DEBUG] ", log.LstdFlags)
@@ -35,10 +38,173 @@ func main() {
 		v1.GET("/bridge", getBridge)
 		v1.POST("/bridge/:bridge_name", addBridge)
 		v1.POST("/interface", addInterface)
+		v1.POST("/vxlan/:bridge_name", addVxlanBridge)
+		v1.DELETE("/vxlan/:bridge_name", delVxlanBridge)
 	}
 
 	router.Run(":8080")
 }
+
+
+// addVxlanBridge handles the POST /api/v1/vxlan/:bridge_name endpoint.
+// It adds a new bridge with vxlan interface.
+//
+// @Summary Add a new bridge
+// @Description Add a new bridge with the given name
+// @Tags vxlan
+// @Accept json
+// @Produce json
+// @Param bridge_name path string true "Bridge name"
+// @Param request body VxlanInterfaceRequest true "Vxlan Interface request"
+// @Success 201 {string} string "Bridge created successfully"
+// @Failure 400 {string} string "Invalid bridge name"
+// @Router /api/v1/vxlan/{bridge_name} [post]
+func addVxlanBridge(c *gin.Context) {
+	vxlanBridgeName := c.Param("bridge_name")
+
+	//TODO: 
+	var request VxlanInterfaceRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.String(http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	// Setup vxlan interface
+	sysLogger.Println("Create VXLAN interface: ", request.VxlanInterface)
+	cmd := exec.Command("ip", "link", "add", request.VxlanInterface, "type", "vxlan", "id", request.VxlanId, "remote", request.RemoteIp, "dev", request.BindInterface)
+	err := cmd.Run()
+	if err != nil {
+		sysLogger.Println("Failed to create vxlan interface: ", err)
+		c.String(http.StatusInternalServerError, "Failed to create vxlan interface")
+		return
+	}
+
+	sysLogger.Println("Set VXLAN mtu to 1400")
+	cmd = exec.Command("ip", "link", "set", "dev", request.VxlanInterface, "mtu", "1400")
+	err = cmd.Run()
+	if err != nil {
+		sysLogger.Println("Failed to set vxlan mtu: ", err)
+		c.String(http.StatusInternalServerError, "Failed to set vxlan mtu")
+		return
+	}
+
+	// Create bridge
+	sysLogger.Println("Create bridge: ", vxlanBridgeName)
+	cmd = exec.Command("brctl", "addbr", vxlanBridgeName)
+	err = cmd.Run()
+	if err != nil {
+		sysLogger.Println("Failed to create bridge: ", err)
+		c.String(http.StatusInternalServerError, "Failed to create bridge")
+		return
+	}
+
+	// Add vxlan interface to bridge
+	sysLogger.Println("Add VXLAN interface to bridge")
+	cmd = exec.Command("brctl", "addif", vxlanBridgeName, request.VxlanInterface)
+	err = cmd.Run()
+	if err != nil {
+		sysLogger.Println("Failed to add VXLAN interface to bridge: ", err)
+		c.String(http.StatusInternalServerError, "Failed to add VXLAN interface to bridge")
+		return
+	}
+
+	// Configure bridge ip
+	sysLogger.Println("Set bridge ip: ", request.LocalBridgeIp)
+	cmd = exec.Command("ip", "addr", "add", request.LocalBridgeIp, "dev", vxlanBridgeName)
+	err = cmd.Run()
+	if err != nil {
+		sysLogger.Println("Failed to set bridge ip: ", err)
+		c.String(http.StatusInternalServerError, "Failed to set bridge ip")
+		return
+	}
+
+	cmd = exec.Command("ip", "link", "set", request.VxlanInterface, "up")
+	err = cmd.Run()
+	if err != nil {
+		sysLogger.Println("Failed to enable vxlan interface: ", err)
+		c.String(http.StatusInternalServerError, "Failed to enable vxlan interface")
+		return
+	}
+
+	cmd = exec.Command("ip", "link", "set", vxlanBridgeName, "up")
+	err = cmd.Run()
+	if err != nil {
+		sysLogger.Println("Failed to enable bridge: ", err)
+		c.String(http.StatusInternalServerError, "Failed to enable bridge")
+		return
+	}
+
+	BridgeMap[vxlanBridgeName] = request.VxlanInterface
+
+	response := fmt.Sprintf("Bridge %s created successfully", vxlanBridgeName)
+	c.String(http.StatusCreated, response)
+}
+
+//TODO: GetVxlanBridge
+
+//TODO: DeleteVxlanBridge
+// delVxlanBridge handles the DELETE /api/v1/vxlan/:bridge_name endpoint.
+// It delete a exist bridge with vxlan interface.
+//
+// @Summary Delete bridge
+// @Description Delete a exist bridge with the given name
+// @Tags vxlan
+// @Accept json
+// @Produce json
+// @Param bridge_name path string true "Bridge name"
+// @Success 200 {string} string "Bridge delete successfully"
+// @Router /api/v1/vxlan/{bridge_name} [delete]
+func delVxlanBridge(c *gin.Context) {
+	vxlanBridgeName := c.Param("bridge_name")
+
+	if vxlanIf, exist := BridgeMap[vxlanBridgeName]; exist {
+		// Disable device
+		sysLogger.Println("Disable device")
+		cmd := exec.Command("ip", "link", "set", vxlanIf, "down")
+		err := cmd.Run()
+		if err != nil {
+			sysLogger.Println("Failed to disable device ", vxlanIf)
+			c.String(http.StatusInternalServerError, "Failed to disable vxlan interface")
+			return
+		}
+
+		cmd = exec.Command("ip", "link", "set", vxlanBridgeName, "down")
+		err = cmd.Run()
+		if err != nil {
+			sysLogger.Println("Failed to disable device ", vxlanBridgeName)
+			c.String(http.StatusInternalServerError, "Failed to disable bridge")
+			return
+		}
+
+		// Remove vxlan interface
+		cmd = exec.Command("ip", "link", "del", vxlanIf)
+		err = cmd.Run()
+		if err != nil {
+			sysLogger.Println("Failed to delete device ", vxlanIf)
+			c.String(http.StatusInternalServerError, "Failed to delete device")
+			return
+		}
+
+		// Remove bridge
+		cmd = exec.Command("brctl", "delbr", vxlanBridgeName)
+		err = cmd.Run()
+		if err != nil {
+			sysLogger.Println("Failed to remove bridge ", vxlanBridgeName)
+			c.String(http.StatusInternalServerError, "Failed to remove bridge")
+			return
+		}
+
+		// Remove from map
+		delete(BridgeMap, vxlanBridgeName)
+	} else {
+		// Bridge not exist
+		c.String(http.StatusNotFound, "Bridge not found")
+		return 
+	}
+	
+	c.JSON(http.StatusOK, "Success")
+}
+
 
 // getBridge handles the GET /api/v1/bridge endpoint.
 // It returns the current bridge and connected interface.
@@ -201,4 +367,14 @@ type BridgeResponse struct {
 type InterfaceRequest struct {
 	Bridge1 string `json:"bridge1"`
 	Bridge2 string `json:"bridge2"`
+}
+
+
+type VxlanInterfaceRequest struct {
+	BindInterface 		string 	`json:"bindInterface"`
+	VxlanInterface 		string 	`json:"vxlanInterface"`
+	VxlanId				string	`json:"vxlanId"`
+	//LocalBridgeName		string	`json:"localBrName"`
+	RemoteIp			string	`json:"remoteIp"`
+	LocalBridgeIp		string	`json:"localBrIp"`
 }
