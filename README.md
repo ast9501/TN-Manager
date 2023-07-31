@@ -4,6 +4,11 @@ Simulate a simple transport network to brige subnetwork.
 Create a Transport Network (Linux Bridge), and add subnet interface (Linux Bridge) on demand.
 
 ## Build
+* Install swaggo
+```
+go install github.com/swaggo/swag/cmd/swag@v1.16.2
+```
+
 * Build(Update) swagger api doc
 ```
 swag init
