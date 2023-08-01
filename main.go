@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"flag"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -23,7 +24,6 @@ var BridgeMap map[string]string = make(map[string]string)
 // @title Bridge API
 // @version 1.0
 // @description API endpoints for managing bridges and interfaces.
-// @host 192.168.101.128:8080
 // @BasePath /
 func main() {
 	sysLogger = log.New(os.Stdout, "[DEBUG] ", log.LstdFlags)
@@ -42,7 +42,16 @@ func main() {
 		v1.DELETE("/vxlan/:bridge_name", delVxlanBridge)
 	}
 
-	router.Run(":8080")
+	port := flag.String("port", "8080", "service port")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage：\n")
+		fmt.Fprintf(os.Stderr, "  %s [options]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "flags：\n")
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+
+	router.Run(":" + *port)
 }
 
 

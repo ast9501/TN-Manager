@@ -28,7 +28,6 @@ definitions:
       vxlanInterface:
         type: string
     type: object
-host: 192.168.101.128:8080
 info:
   contact: {}
   description: API endpoints for managing bridges and interfaces.
