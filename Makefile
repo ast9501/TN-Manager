@@ -9,6 +9,9 @@ generate-api-doc:
 build-app:
 	go build -o $(INSTDIR)/TN-Manager $(SOURCE)/main.go
 
+build-image:
+	sudo docker build -t alan0415/tn-manager:v0.1 .
+
 clean:
 	rm -rf bin
 	rm -rf docs

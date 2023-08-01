@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tn-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tn-manager
+  template:
+    metadata:
+      labels:
+        app: tn-manager
+    spec:
+      hostNetwork: true
+      containers:
+      - name: server
+        image: alan0415/tn-manager:v0.1
+        command: ["./TN-Manager"]
+        securityContext:
+          privileged: true
+        ports:
+        - containerPort: 8080
+        #env:
+        #- name: ENV 
+        #  value: "PRODUCTION"

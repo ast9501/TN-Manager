@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: tn-manager-svc
+spec:
+  selector:
+    app: tn-manager
+  type: NodePort
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+    nodePort: 30188

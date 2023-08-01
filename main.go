@@ -2,12 +2,12 @@ package main
 
 import (
 	"crypto/rand"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
-	"flag"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -54,7 +54,6 @@ func main() {
 	router.Run(":" + *port)
 }
 
-
 // addVxlanBridge handles the POST /api/v1/vxlan/:bridge_name endpoint.
 // It adds a new bridge with vxlan interface.
 //
@@ -71,7 +70,6 @@ func main() {
 func addVxlanBridge(c *gin.Context) {
 	vxlanBridgeName := c.Param("bridge_name")
 
-	//TODO: 
 	var request VxlanInterfaceRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.String(http.StatusBadRequest, "Invalid request body")
@@ -208,12 +206,11 @@ func delVxlanBridge(c *gin.Context) {
 	} else {
 		// Bridge not exist
 		c.String(http.StatusNotFound, "Bridge not found")
-		return 
+		return
 	}
-	
+
 	c.JSON(http.StatusOK, "Success")
 }
-
 
 // getBridge handles the GET /api/v1/bridge endpoint.
 // It returns the current bridge and connected interface.
@@ -378,12 +375,11 @@ type InterfaceRequest struct {
 	Bridge2 string `json:"bridge2"`
 }
 
-
 type VxlanInterfaceRequest struct {
-	BindInterface 		string 	`json:"bindInterface"`
-	VxlanInterface 		string 	`json:"vxlanInterface"`
-	VxlanId				string	`json:"vxlanId"`
+	BindInterface  string `json:"bindInterface"`
+	VxlanInterface string `json:"vxlanInterface"`
+	VxlanId        string `json:"vxlanId"`
 	//LocalBridgeName		string	`json:"localBrName"`
-	RemoteIp			string	`json:"remoteIp"`
-	LocalBridgeIp		string	`json:"localBrIp"`
+	RemoteIp      string `json:"remoteIp"`
+	LocalBridgeIp string `json:"localBrIp"`
 }
