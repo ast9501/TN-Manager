@@ -39,6 +39,7 @@ func main() {
 		v1.POST("/bridge/:bridge_name", addBridge)
 		v1.POST("/interface", addInterface)
 		v1.POST("/vxlan/:bridge_name", addVxlanBridge)
+		v1.POST("/vxlan/:bridge_name/activate", activateVxlanBridge)
 		v1.DELETE("/vxlan/:bridge_name", delVxlanBridge)
 	}
 
@@ -125,8 +126,29 @@ func addVxlanBridge(c *gin.Context) {
 		return
 	}
 
-	cmd = exec.Command("ip", "link", "set", request.VxlanInterface, "up")
-	err = cmd.Run()
+	BridgeMap[vxlanBridgeName] = request.VxlanInterface
+
+	response := fmt.Sprintf("Bridge %s created successfully", vxlanBridgeName)
+	c.String(http.StatusCreated, response)
+}
+
+// activateVxlanBridge handles the POST /api/v1/vxlan/:bridge_name/activate endpoint.
+// It activate bridge with vxlan interface.
+//
+// @Summary Activate vxlan bridge
+// @Description
+// @Tags vxlan
+// @Accept json
+// @Produce json
+// @Param bridge_name path string true "Bridge name"
+// @Success 204 {string} string "Bridge Activated"
+// @Failure 400 {string} string "Invalid bridge name"
+// @Router /api/v1/vxlan/{bridge_name}/activate [post]
+func activateVxlanBridge(c *gin.Context) {
+	vxlanBridgeName := c.Param("bridge_name")
+
+	cmd := exec.Command("ip", "link", "set", BridgeMap[vxlanBridgeName], "up")
+	err := cmd.Run()
 	if err != nil {
 		sysLogger.Println("Failed to enable vxlan interface: ", err)
 		c.String(http.StatusInternalServerError, "Failed to enable vxlan interface")
@@ -141,10 +163,7 @@ func addVxlanBridge(c *gin.Context) {
 		return
 	}
 
-	BridgeMap[vxlanBridgeName] = request.VxlanInterface
-
-	response := fmt.Sprintf("Bridge %s created successfully", vxlanBridgeName)
-	c.String(http.StatusCreated, response)
+	c.String(http.StatusAccepted, "Bridge Activated")
 }
 
 //TODO: GetVxlanBridge

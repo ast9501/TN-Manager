@@ -190,6 +190,43 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/vxlan/{bridge_name}/activate": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vxlan"
+                ],
+                "summary": "Activate vxlan bridge",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bridge name",
+                        "name": "bridge_name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Bridge Activated",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid bridge name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {

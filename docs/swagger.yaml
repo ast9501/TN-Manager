@@ -149,4 +149,28 @@ paths:
       summary: Add a new bridge
       tags:
       - vxlan
+  /api/v1/vxlan/{bridge_name}/activate:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bridge name
+        in: path
+        name: bridge_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Bridge Activated
+          schema:
+            type: string
+        "400":
+          description: Invalid bridge name
+          schema:
+            type: string
+      summary: Activate vxlan bridge
+      tags:
+      - vxlan
 swagger: "2.0"

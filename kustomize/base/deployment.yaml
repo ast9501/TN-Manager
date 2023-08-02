@@ -15,7 +15,7 @@ spec:
       hostNetwork: true
       containers:
       - name: server
-        image: alan0415/tn-manager:v0.1
+        image: alan0415/tn-manager:v0.2
         command: ["./TN-Manager"]
         securityContext:
           privileged: true
