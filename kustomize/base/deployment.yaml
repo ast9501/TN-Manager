@@ -15,12 +15,19 @@ spec:
       hostNetwork: true
       containers:
       - name: server
-        image: alan0415/tn-manager:v0.2
+        image: alan0415/tn-manager:v0.2.1
         command: ["./TN-Manager"]
         securityContext:
           privileged: true
+        volumeMounts:
+        - name: lib-modules
+          mountPath: /lib/modules
         ports:
         - containerPort: 8080
         #env:
         #- name: ENV 
         #  value: "PRODUCTION"
+      volumes:
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
