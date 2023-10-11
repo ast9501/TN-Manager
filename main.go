@@ -12,8 +12,10 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/vishvananda/netlink"
 
 	_ "github.com/ast9501/TN-Manager/docs" // include swagger doc
+	"github.com/ast9501/TN-Manager/internal"
 )
 
 var sysLogger *log.Logger
@@ -33,6 +35,7 @@ func main() {
 	// register swagger url
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	//TODO: Decouple api functions to another module
 	v1 := router.Group("/api/v1")
 	{
 		v1.GET("/bridge", getBridge)
@@ -77,52 +80,63 @@ func addVxlanBridge(c *gin.Context) {
 		return
 	}
 
+	//FIXME: Check if vxlan interface exist, if exist return error
+
 	// Setup vxlan interface
 	sysLogger.Println("Create VXLAN interface: ", request.VxlanInterface)
-	cmd := exec.Command("ip", "link", "add", request.VxlanInterface, "type", "vxlan", "id", request.VxlanId, "remote", request.RemoteIp, "dev", request.BindInterface)
-	err := cmd.Run()
+
+	vxlanLink, err := internal.CreateVxlan(request.VxlanInterface, request.VxlanId, request.BindInterface, request.RemoteIp)
+
 	if err != nil {
 		sysLogger.Println("Failed to create vxlan interface: ", err)
 		c.String(http.StatusInternalServerError, "Failed to create vxlan interface")
 		return
 	}
 
-	sysLogger.Println("Set VXLAN mtu to 1400")
-	cmd = exec.Command("ip", "link", "set", "dev", request.VxlanInterface, "mtu", "1400")
-	err = cmd.Run()
-	if err != nil {
-		sysLogger.Println("Failed to set vxlan mtu: ", err)
-		c.String(http.StatusInternalServerError, "Failed to set vxlan mtu")
+	// Check if bridge exist
+	bridgeLink, _ := internal.GetBridge(vxlanBridgeName)
+	if bridgeLink == nil {
+		bridgeLink, err = internal.CreateBridge(vxlanBridgeName)
+		if err != nil {
+			sysLogger.Println("Failed to create bridge: ", err)
+			c.String(http.StatusInternalServerError, "Failed to create bridge")
+			return
+		}
+	}
+
+	bridge, isBridge := bridgeLink.(*netlink.Bridge)
+	if !isBridge {
+		sysLogger.Println("Failed to assert netlink.Bridge")
+		c.String(http.StatusInternalServerError, "The specified bridge is not of type netlink.Bridge")
 		return
 	}
 
-	// Create bridge
-	sysLogger.Println("Create bridge: ", vxlanBridgeName)
-	cmd = exec.Command("brctl", "addbr", vxlanBridgeName)
-	err = cmd.Run()
+	err = internal.SetVxlanMaster(vxlanLink, bridge)
 	if err != nil {
-		sysLogger.Println("Failed to create bridge: ", err)
-		c.String(http.StatusInternalServerError, "Failed to create bridge")
+		sysLogger.Println("Failed to bind vxlan interface to bridge: ", err)
+		c.String(http.StatusInternalServerError, "Failed to bind vxlan to bridge")
 		return
 	}
 
-	// Add vxlan interface to bridge
-	sysLogger.Println("Add VXLAN interface to bridge")
-	cmd = exec.Command("brctl", "addif", vxlanBridgeName, request.VxlanInterface)
-	err = cmd.Run()
+	err = internal.SetBridgeIp(request.LocalBridgeIp, bridgeLink)
 	if err != nil {
-		sysLogger.Println("Failed to add VXLAN interface to bridge: ", err)
-		c.String(http.StatusInternalServerError, "Failed to add VXLAN interface to bridge")
-		return
-	}
-
-	// Configure bridge ip
-	sysLogger.Println("Set bridge ip: ", request.LocalBridgeIp)
-	cmd = exec.Command("ip", "addr", "add", request.LocalBridgeIp, "dev", vxlanBridgeName)
-	err = cmd.Run()
-	if err != nil {
-		sysLogger.Println("Failed to set bridge ip: ", err)
+		sysLogger.Println("Failed to configure bridge ipv4 addr: ", err)
 		c.String(http.StatusInternalServerError, "Failed to set bridge ip")
+		return
+	}
+
+	// Activate bridge and vxlan
+	err = netlink.LinkSetUp(vxlanLink)
+	if err != nil {
+		sysLogger.Println("Failed to activate vxlan interface: ", err)
+		c.String(http.StatusInternalServerError, "Failed to enable vxlan interface")
+		return
+	}
+
+	err = netlink.LinkSetUp(bridgeLink)
+	if err != nil {
+		sysLogger.Println("Failed to activate bridge: ", err)
+		c.String(http.StatusInternalServerError, "Failed to enable bridge")
 		return
 	}
 
@@ -168,7 +182,6 @@ func activateVxlanBridge(c *gin.Context) {
 
 //TODO: GetVxlanBridge
 
-//TODO: DeleteVxlanBridge
 // delVxlanBridge handles the DELETE /api/v1/vxlan/:bridge_name endpoint.
 // It delete a exist bridge with vxlan interface.
 //
@@ -186,16 +199,17 @@ func delVxlanBridge(c *gin.Context) {
 	if vxlanIf, exist := BridgeMap[vxlanBridgeName]; exist {
 		// Disable device
 		sysLogger.Println("Disable device")
-		cmd := exec.Command("ip", "link", "set", vxlanIf, "down")
-		err := cmd.Run()
+
+		// Set vxlan interface down and unbound vxlan from bridge
+		err := internal.SetVxlanDown(vxlanIf)
 		if err != nil {
 			sysLogger.Println("Failed to disable device ", vxlanIf)
 			c.String(http.StatusInternalServerError, "Failed to disable vxlan interface")
 			return
 		}
 
-		cmd = exec.Command("ip", "link", "set", vxlanBridgeName, "down")
-		err = cmd.Run()
+		// Remove bridge
+		err = internal.DelBridge(vxlanBridgeName)
 		if err != nil {
 			sysLogger.Println("Failed to disable device ", vxlanBridgeName)
 			c.String(http.StatusInternalServerError, "Failed to disable bridge")
@@ -203,20 +217,10 @@ func delVxlanBridge(c *gin.Context) {
 		}
 
 		// Remove vxlan interface
-		cmd = exec.Command("ip", "link", "del", vxlanIf)
-		err = cmd.Run()
+		err = internal.DelVxlan(vxlanIf)
 		if err != nil {
 			sysLogger.Println("Failed to delete device ", vxlanIf)
 			c.String(http.StatusInternalServerError, "Failed to delete device")
-			return
-		}
-
-		// Remove bridge
-		cmd = exec.Command("brctl", "delbr", vxlanBridgeName)
-		err = cmd.Run()
-		if err != nil {
-			sysLogger.Println("Failed to remove bridge ", vxlanBridgeName)
-			c.String(http.StatusInternalServerError, "Failed to remove bridge")
 			return
 		}
 
@@ -267,7 +271,9 @@ func addBridge(c *gin.Context) {
 
 	bridgeName := c.Param("bridge_name")
 
-	err := createBridge(bridgeName)
+	//err := createBridge(bridgeName)
+	_, err := internal.CreateBridge(bridgeName)
+
 	if err != nil {
 		c.String(http.StatusBadRequest, fmt.Sprintf("Failed to create bridge: %s", err.Error()))
 		return
@@ -305,23 +311,6 @@ func addInterface(c *gin.Context) {
 
 	response := "Interface added successfully"
 	c.String(http.StatusOK, response)
-}
-
-// createBridge creates a Linux bridge with the given name.
-func createBridge(bridgeName string) error {
-	cmd := exec.Command("brctl", "addbr", bridgeName)
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	cmd = exec.Command("ip", "link", "set", "dev", bridgeName, "up")
-	err = cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // createVethPair creates a veth pair between two Linux bridges.
