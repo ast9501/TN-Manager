@@ -14,6 +14,17 @@ definitions:
       bridge2:
         type: string
     type: object
+  main.SliceRequest:
+    properties:
+      DstIP:
+        type: string
+      FlowRate:
+        type: integer
+      SliceSD:
+        type: string
+      SrcIP:
+        type: string
+    type: object
   main.VxlanInterfaceRequest:
     properties:
       bindInterface:
@@ -98,6 +109,57 @@ paths:
       summary: Add a new interface
       tags:
       - interface
+  /api/v1/slice/{bridge_name}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bridge name
+        in: path
+        name: bridge_name
+        required: true
+        type: string
+      - description: Slice request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.SliceRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Slice Installed
+          schema:
+            type: string
+      summary: Add slice on interface
+      tags:
+      - slice
+  /api/v1/slice/{bridge_name}/{slice_sd}}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bridge name
+        in: path
+        name: bridge_name
+        required: true
+        type: string
+      - description: Slice SD identifier
+        in: path
+        name: slice_sd
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Slice deletion successful
+          schema:
+            type: string
+      summary: Del slice on interface
+      tags:
+      - slice
   /api/v1/vxlan/{bridge_name}:
     delete:
       consumes:
@@ -170,7 +232,7 @@ paths:
           description: Invalid bridge name
           schema:
             type: string
-      summary: Activate vxlan bridge
+      summary: '[Deprecated] Activate vxlan bridge'
       tags:
       - vxlan
 swagger: "2.0"

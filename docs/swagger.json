@@ -106,6 +106,84 @@
                 }
             }
         },
+        "/api/v1/slice/{bridge_name}": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "slice"
+                ],
+                "summary": "Add slice on interface",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bridge name",
+                        "name": "bridge_name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Slice request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.SliceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Slice Installed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/slice/{bridge_name}/{slice_sd}}": {
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "slice"
+                ],
+                "summary": "Del slice on interface",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bridge name",
+                        "name": "bridge_name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Slice SD identifier",
+                        "name": "slice_sd",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Slice deletion successful",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/vxlan/{bridge_name}": {
             "post": {
                 "description": "Add a new bridge with the given name",
@@ -194,7 +272,7 @@
                 "tags": [
                     "vxlan"
                 ],
-                "summary": "Activate vxlan bridge",
+                "summary": "[Deprecated] Activate vxlan bridge",
                 "parameters": [
                     {
                         "type": "string",
@@ -240,6 +318,23 @@
                     "type": "string"
                 },
                 "bridge2": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.SliceRequest": {
+            "type": "object",
+            "properties": {
+                "DstIP": {
+                    "type": "string"
+                },
+                "FlowRate": {
+                    "type": "integer"
+                },
+                "SliceSD": {
+                    "type": "string"
+                },
+                "SrcIP": {
                     "type": "string"
                 }
             }

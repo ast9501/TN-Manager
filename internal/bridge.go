@@ -35,8 +35,12 @@ func CreateBridge(bridgeName string) (*netlink.Bridge, error) {
 }
 
 func SetBridgeIp(ipv4Addr string, bridgeLink netlink.Link) error {
-	addr, _ := netlink.ParseAddr(ipv4Addr)
-	err := netlink.AddrAdd(bridgeLink, addr)
+	addr, err := netlink.ParseAddr(ipv4Addr)
+	if err != nil {
+		internalLogger.Panic("Failed to parse ipv4 addr, ", err)
+		return err
+	}
+	err = netlink.AddrAdd(bridgeLink, addr)
 	if err != nil {
 		internalLogger.Println("Failed to add ipv4 to bridge:", err)
 		return err

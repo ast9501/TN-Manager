@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -22,6 +23,7 @@ var sysLogger *log.Logger
 
 // Map bridgeName to vxlanInterface
 var BridgeMap map[string]string = make(map[string]string)
+var SliceMap map[string]string = make(map[string]string)
 
 // @title Bridge API
 // @version 1.0
@@ -44,6 +46,8 @@ func main() {
 		v1.POST("/vxlan/:bridge_name", addVxlanBridge)
 		v1.POST("/vxlan/:bridge_name/activate", activateVxlanBridge)
 		v1.DELETE("/vxlan/:bridge_name", delVxlanBridge)
+		v1.POST("/slice/:bridge_name", addSlice)
+		v1.DELETE("/slice/:bridge_name", delSlice)
 	}
 
 	port := flag.String("port", "8080", "service port")
@@ -56,6 +60,73 @@ func main() {
 	flag.Parse()
 
 	router.Run(":" + *port)
+}
+
+// addSlice handles the POST /api/v1/slice/:bridge_name endpoint.
+// It add slice (tc rule) to vxlan interface.
+//
+// @Summary Add slice on interface
+// @Description
+// @Tags slice
+// @Accept json
+// @Produce json
+// @Param bridge_name path string true "Bridge name"
+// @Param request body SliceRequest true "Slice request"
+// @Success 204 {string} string "Slice Installed"
+// @Router /api/v1/slice/{bridge_name} [post]
+func addSlice(c *gin.Context) {
+	bridgeName := c.Param("bridge_name")
+
+	var request SliceRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.String(http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	sysLogger.Println("bridgeName, ", bridgeName)
+	vxlanInterface, ok := BridgeMap[bridgeName]
+
+	if ok {
+		sysLogger.Println("Add slice on interface, ", vxlanInterface)
+		classId, err := internal.AddQdisc(BridgeMap[bridgeName], request.FlowRate)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Failed to add qdisc, ", err)
+			return
+		}
+
+		err = internal.AddFilter(vxlanInterface, request.DstIp, strconv.Itoa(int(classId)))
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Failed to add filter, ", err)
+			return
+		}
+	} else {
+		sysLogger.Println("Failed to find interface")
+		c.String(http.StatusInternalServerError, "Failed to find interface")
+		return
+	}
+
+	sysLogger.Println("Install slice successful, ", "SliceSD", request.SliceSd, "FlowRate (KB/Sec)", request.FlowRate)
+	c.String(http.StatusAccepted, "Install Slice successful")
+}
+
+// delSlice handles the DELETE /api/v1/slice/:bridge_name/:sliceSd endpoint.
+// It del slice (tc rule) on vxlan interface.
+//
+// @Summary Del slice on interface
+// @Description
+// @Tags slice
+// @Accept json
+// @Produce json
+// @Param bridge_name path string true "Bridge name"
+// @Param slice_sd path string true "Slice SD identifier"
+// @Success 204 {string} string "Slice deletion successful"
+// @Router /api/v1/slice/{bridge_name}/{slice_sd}} [delete]
+func delSlice(c *gin.Context) {
+	sliceSd := c.Param("sliceSd")
+	bridge_name := c.Param("bridgeName")
+
+	sysLogger.Println("Delete slice ", "Slice SD", sliceSd, "Bridge", bridge_name)
+	c.String(http.StatusAccepted, "Slice deleted")
 }
 
 // addVxlanBridge handles the POST /api/v1/vxlan/:bridge_name endpoint.
@@ -147,9 +218,9 @@ func addVxlanBridge(c *gin.Context) {
 }
 
 // activateVxlanBridge handles the POST /api/v1/vxlan/:bridge_name/activate endpoint.
-// It activate bridge with vxlan interface.
+// [Deprecated] It activate bridge with vxlan interface.
 //
-// @Summary Activate vxlan bridge
+// @Summary [Deprecated] Activate vxlan bridge
 // @Description
 // @Tags vxlan
 // @Accept json
@@ -390,4 +461,11 @@ type VxlanInterfaceRequest struct {
 	//LocalBridgeName		string	`json:"localBrName"`
 	RemoteIp      string `json:"remoteIp"`
 	LocalBridgeIp string `json:"localBrIp"`
+}
+
+type SliceRequest struct {
+	FlowRate int    `json:"FlowRate"`
+	SliceSd  string `json:"SliceSD,omitempty"`
+	DstIp    string `json:"DstIP"`
+	SrcIp    string `json:"SrcIP"`
 }
