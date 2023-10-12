@@ -51,6 +51,24 @@ This api will setup a new vxlan interface, create a new Linux bridge and bind th
 }
 ```
 
+### Manage Network Slice on Bridge (TC, downlink)
+#### Create new slice on bridge
+This api will create tc rule on bridge (vxlan interface), limit downlink flow rate by filter dstIp.
+* Sample Payload
+  * SliceSd(Optional): Slice SD
+  * FlowRate: downlink flow rate (KB/Sec)
+  * DstIp
+  * SrcIp
+```
+#URL: /api/v1/slice/{bridge_name}
+{
+  "SliceSd": "010203",
+  "FlowRate": 800,
+  "DstIP": "192.168.3.221",
+  "SrcIP": "192.168.3.222"
+}
+```
+
 #### Delete VXLAN bridge
 This api will remove the vxlan bridge (Linux bridge and VXLAN interface)
 ```
