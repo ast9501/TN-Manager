@@ -242,7 +242,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "vxlan"
+                    "vxlan-bridge"
                 ],
                 "summary": "Add a new bridge",
                 "parameters": [
@@ -287,7 +287,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "vxlan"
+                    "vxlan-bridge"
                 ],
                 "summary": "Delete bridge",
                 "parameters": [
@@ -318,7 +318,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "vxlan"
+                    "vxlan-bridge"
                 ],
                 "summary": "[Deprecated] Activate vxlan bridge",
                 "parameters": [

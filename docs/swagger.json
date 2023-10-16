@@ -235,7 +235,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "vxlan"
+                    "vxlan-bridge"
                 ],
                 "summary": "Add a new bridge",
                 "parameters": [
@@ -280,7 +280,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "vxlan"
+                    "vxlan-bridge"
                 ],
                 "summary": "Delete bridge",
                 "parameters": [
@@ -311,7 +311,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "vxlan"
+                    "vxlan-bridge"
                 ],
                 "summary": "[Deprecated] Activate vxlan bridge",
                 "parameters": [

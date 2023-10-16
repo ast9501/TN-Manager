@@ -207,7 +207,7 @@ paths:
             type: string
       summary: Delete bridge
       tags:
-      - vxlan
+      - vxlan-bridge
     post:
       consumes:
       - application/json
@@ -237,7 +237,7 @@ paths:
             type: string
       summary: Add a new bridge
       tags:
-      - vxlan
+      - vxlan-bridge
   /api/v1/vxlan/{bridge_name}/activate:
     post:
       consumes:
@@ -261,5 +261,5 @@ paths:
             type: string
       summary: '[Deprecated] Activate vxlan bridge'
       tags:
-      - vxlan
+      - vxlan-bridge
 swagger: "2.0"

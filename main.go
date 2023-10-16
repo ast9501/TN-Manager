@@ -165,7 +165,7 @@ func delSlice(c *gin.Context) {
 //
 // @Summary Add a new bridge
 // @Description Add a new bridge with the given name
-// @Tags vxlan
+// @Tags vxlan-bridge
 // @Accept json
 // @Produce json
 // @Param bridge_name path string true "Bridge name"
@@ -253,7 +253,7 @@ func addVxlanBridge(c *gin.Context) {
 //
 // @Summary [Deprecated] Activate vxlan bridge
 // @Description
-// @Tags vxlan
+// @Tags vxlan-bridge
 // @Accept json
 // @Produce json
 // @Param bridge_name path string true "Bridge name"
@@ -282,14 +282,12 @@ func activateVxlanBridge(c *gin.Context) {
 	c.String(http.StatusAccepted, "Bridge Activated")
 }
 
-//TODO: GetVxlanBridge
-
 // delVxlanBridge handles the DELETE /api/v1/vxlan/:bridge_name endpoint.
 // It delete a exist bridge with vxlan interface.
 //
 // @Summary Delete bridge
 // @Description Delete a exist bridge with the given name
-// @Tags vxlan
+// @Tags vxlan-bridge
 // @Accept json
 // @Produce json
 // @Param bridge_name path string true "Bridge name"
