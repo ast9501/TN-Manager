@@ -36,6 +36,47 @@ const docTemplate = `{
             }
         },
         "/api/v1/bridge/{bridge_name}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bridge"
+                ],
+                "summary": "Retrieve bridge status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bridge name",
+                        "name": "bridge_name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Bridge existed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Bridge not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "System error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Add a new bridge with the given name",
                 "consumes": [

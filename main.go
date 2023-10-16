@@ -44,6 +44,7 @@ func main() {
 		v1.POST("/bridge/:bridge_name", addBridge)
 		v1.POST("/interface", addInterface)
 		v1.POST("/vxlan/:bridge_name", addVxlanBridge)
+		v1.GET("/bridge/:bridge_name", retrieveBridge)
 		v1.POST("/vxlan/:bridge_name/activate", activateVxlanBridge)
 		v1.DELETE("/vxlan/:bridge_name", delVxlanBridge)
 		v1.POST("/slice/:bridge_name", addSlice)
@@ -107,6 +108,36 @@ func addSlice(c *gin.Context) {
 
 	sysLogger.Println("Install slice successful, ", "SliceSD", request.SliceSd, "FlowRate (KB/Sec)", request.FlowRate)
 	c.String(http.StatusAccepted, "Install Slice successful")
+}
+
+// retrieveBridge handles the GET /api/v1/bridge/:bridge_name endpoint.
+// It retrieve bridge status.
+//
+// @Summary Retrieve bridge status
+// @Description
+// @Tags bridge
+// @Accept json
+// @Produce json
+// @Param bridge_name path string true "Bridge name"
+// @Success 204 {string} string "Bridge existed"
+// @Failure 404 {string} string "Bridge not found"
+// @Failure 500 {string} string "System error"
+// @Router /api/v1/bridge/{bridge_name} [GET]
+func retrieveBridge(c *gin.Context) {
+	vxlanBridgeName := c.Param("bridge_name")
+	sysLogger.Println("Get vxlan bridge name", "name", vxlanBridgeName)
+	link, err := internal.GetBridge(vxlanBridgeName)
+	if link == nil {
+		c.String(http.StatusNotFound, "Bridge not found")
+		return
+	} else {
+		if err != nil {
+			c.String(http.StatusInternalServerError, "System error")
+			return
+		}
+	}
+
+	c.String(http.StatusNoContent, "Bridge existed")
 }
 
 // delSlice handles the DELETE /api/v1/slice/:bridge_name/:sliceSd endpoint.
