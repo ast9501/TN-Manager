@@ -10,7 +10,7 @@ build-app:
 	go build -o $(INSTDIR)/TN-Manager $(SOURCE)/main.go
 
 build-image:
-	sudo docker build -t alan0415/tn-manager:v0.2.1 .
+	sudo docker build -t alan0415/tn-manager:v0.3.0 .
 
 clean:
 	rm -rf bin
