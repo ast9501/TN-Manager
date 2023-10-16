@@ -21,7 +21,7 @@ go build -o TN-Manager main.go
 
 ## Usage
 ```
-# use `8080` as default service port, or you can provide `--port=XXX` to use another port
+# use `8081` as default service port, or you can provide `-port=XXX` to use another port
 sudo ./TN-Manager
 ```
 
@@ -67,6 +67,13 @@ This api will create tc rule on bridge (vxlan interface), limit downlink flow ra
   "DstIP": "192.168.3.221",
   "SrcIP": "192.168.3.222"
 }
+```
+
+### Manage Bridge
+#### Retrieve bridge status
+This api for verify bridge exist or not.
+```
+#URL: GET /api/v1/bridge/<bridge_name>
 ```
 
 #### Delete VXLAN bridge
