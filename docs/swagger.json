@@ -226,6 +226,35 @@
             }
         },
         "/api/v1/vxlan/{bridge_name}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vxlan-bridge"
+                ],
+                "summary": "Retrieve vxlan bridge",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bridge name",
+                        "name": "bridge_name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Slice Installed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Add a new bridge with the given name",
                 "consumes": [

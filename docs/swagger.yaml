@@ -208,6 +208,25 @@ paths:
       summary: Delete bridge
       tags:
       - vxlan-bridge
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bridge name
+        in: path
+        name: bridge_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Slice Installed
+          schema:
+            type: string
+      summary: Retrieve vxlan bridge
+      tags:
+      - vxlan-bridge
     post:
       consumes:
       - application/json

@@ -44,6 +44,7 @@ func main() {
 		v1.POST("/bridge/:bridge_name", addBridge)
 		v1.POST("/interface", addInterface)
 		v1.POST("/vxlan/:bridge_name", addVxlanBridge)
+		v1.GET("/vxlan/:bridge_name", retrieveVxlanBridge)
 		v1.GET("/bridge/:bridge_name", retrieveBridge)
 		v1.POST("/vxlan/:bridge_name/activate", activateVxlanBridge)
 		v1.DELETE("/vxlan/:bridge_name", delVxlanBridge)
@@ -61,6 +62,30 @@ func main() {
 	flag.Parse()
 
 	router.Run(":" + *port)
+}
+
+// retrieveVxlanBridge handles the GET /api/v1/vxlan/:bridge_name endpoint.
+// It retrieve vxlan bridge status.
+//
+// @Summary Retrieve vxlan bridge
+// @Description
+// @Tags vxlan-bridge
+// @Accept json
+// @Produce json
+// @Param bridge_name path string true "Bridge name"
+// @Success 202 {string} string "Slice Installed"
+// @Failed 404 {string} string "Interface not found"
+// @Router /api/v1/vxlan/{bridge_name} [get]
+func retrieveVxlanBridge(c *gin.Context) {
+	// If bridge doesn't record in BridgeMap (without vxlan interface binding), return 404
+	bridgeName := c.Param("bridge_name")
+
+	_, ok := BridgeMap[bridgeName]
+	if ok {
+		c.String(http.StatusAccepted, "Vxlan bridge existed")
+	} else {
+		c.String(http.StatusNotFound, "Vxlan bridge not existed")
+	}
 }
 
 // addSlice handles the POST /api/v1/slice/:bridge_name endpoint.
